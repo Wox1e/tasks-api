@@ -2,22 +2,40 @@ from fastapi import FastAPI, Request, Response
 from db import User, session, Task
 from jwt_tokens import *
 from utils import *
+import uvicorn
+import os
+from dotenv import load_dotenv
 
+#SlowAPI
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+#
 
+limiter = Limiter(get_remote_address)
+load_dotenv()
 app = FastAPI()
+
+
+
+if __name__=="__main__":
+    uvicorn.run(app)
+
 
 #
 #TODO: Exception handling, Clean the code
 #
 
 
-@app.get("/")
-def root():
+
+@app.get("/hello")
+@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
+def root(request:Request):
     return {"message": "Hello World"}
 
 
 
 @app.post("/register")
+@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
 async def register(request: Request):
 
     try:
@@ -37,6 +55,7 @@ async def register(request: Request):
     
 
 @app.post("/login")
+@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
 async def login(request: Request, response:Response):
 
     try:
@@ -73,6 +92,7 @@ async def logout(request: Request):
 
 
 @app.post("/tasks")
+@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
 async def post_tasks(request: Request):
     try:
         body = dict(await request.json())
@@ -90,11 +110,13 @@ async def post_tasks(request: Request):
     
 
 @app.get("/tasks")
+@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
 async def get_tasks(request: Request):
     try:
         body = dict(await request.json())
         id = tokenAuth(body, request)
         tasks = session.query(Task).filter_by(user_id = id).all()
+
         return tasks
     
     except AuthError as e:
@@ -105,6 +127,7 @@ async def get_tasks(request: Request):
 
 
 @app.get("/tasks/{task_id}")
+@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
 async def user_tasks(task_id:int, request:Request):
     try:
         body = dict(await request.json())
@@ -120,6 +143,7 @@ async def user_tasks(task_id:int, request:Request):
 
 
 @app.put("/tasks/{task_id}")
+@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
 async def update_task(task_id:int, request:Request):
     try:
         body = dict(await request.json())
@@ -141,6 +165,7 @@ async def update_task(task_id:int, request:Request):
 
 
 @app.put("/tasks/{task_id}")
+@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
 async def put_task(task_id:int, request:Request):
     try:
         body = dict(await request.json())
@@ -160,6 +185,7 @@ async def put_task(task_id:int, request:Request):
     
 
 @app.delete("/tasks/{task_id}")
+@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
 async def delete_task(task_id:int, request:Request):
     try:
         body = dict(await request.json())
@@ -174,3 +200,5 @@ async def delete_task(task_id:int, request:Request):
         return {"status":False, "Error":e.msg}
     except:
         return {"status":False}
+    
+
