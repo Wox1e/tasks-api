@@ -5,6 +5,7 @@ from utils import *
 import uvicorn
 import os
 from dotenv import load_dotenv
+from logger import to_brocker
 
 #SlowAPI
 from slowapi import Limiter
@@ -24,6 +25,7 @@ if __name__=="__main__":
 #
 #TODO: Exception handling, Clean the code
 #
+
 
 
 
