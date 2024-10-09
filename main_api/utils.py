@@ -16,10 +16,7 @@ class AuthError(Exception):
 
 def tokenAuth(body:dict, request:Request) -> int:
 
-    if "token" in body.keys():
-        token = body["token"]
-    else:
-        token = request.cookies.get("token")
+    token = getToken(body, request)
 
     if not token:
         raise AuthError
@@ -31,3 +28,11 @@ def tokenAuth(body:dict, request:Request) -> int:
 
     return id
     
+def getToken(body:dict, request:Request):
+
+    if "token" in body.keys():
+        token = body["token"]
+    else:
+        token = request.cookies.get("token")
+        
+    return token

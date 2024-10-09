@@ -1,6 +1,6 @@
 import jwt
+from config import SECRET_KEY
 
-SECRET_KEY = "dick"
 
 
 def encode_jwt(body:dict, algorithm = "HS256") -> str:

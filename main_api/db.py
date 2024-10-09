@@ -4,10 +4,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from hashing import sha256
 from jwt_tokens import decode_jwt
-
+from config import DB_URI
 
 Base = declarative_base()
-db = 'sqlite:///users.db'
+db = DB_URI
 engine = create_engine(db)
 
 
@@ -19,11 +19,6 @@ session = Session()
 
 
 class AbstractClass():
-    # @staticmethod
-    # def getByID(self:object, id:int) -> object:
-    #     print(self)
-    #     return session.query(self).filter_by(user_id = id).filter_by(id = id).first()
-
     def addToDB(self):
         session.add(self)
         session.commit()
@@ -94,5 +89,7 @@ class Task(Base, AbstractClass):
 
 
 
-# If doesnt exist
-# Base.metadata.create_all(engine)
+# try:
+#     Base.metadata.create_all(engine)
+# except:
+#     pass
