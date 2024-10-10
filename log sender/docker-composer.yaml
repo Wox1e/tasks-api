@@ -1,0 +1,34 @@
+version: '3'
+services:
+  
+  rabbitmq:
+    image: rabbitmq
+    container_name: logs-rabbitmq-container
+    environment:
+      # RABBITMQ_DEFAULT_USER: "user"
+      # RABBITMQ_DEFAULT_PASS: "user"
+      ports: -"5672:15672"
+    networks:
+      - my-network
+
+  # log-sender:
+  #   image: log-sender
+  #   container_name: log-sender
+  #   entrypoint: python main.py
+  #   networks:
+  #     - my-network
+  #   depends_on:
+  #     - rabbitmq
+  test_image:
+    image: test_image:latest
+    container_name: test-container
+    entrypoint: python main.py
+    ports:
+      - "8000:8000"
+    networks:
+      - my-network
+    depends_on:
+      - rabbitmq
+networks:
+  my-network:
+    driver: bridge

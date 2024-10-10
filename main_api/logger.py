@@ -8,23 +8,18 @@ def logging_startup():
     try:
         connection = pika.BlockingConnection(pika.ConnectionParameters(BROKER_URI))
         channel = connection.channel()
-        
-        
-        channel.queue_declare(QUEUE)
+        print("connected to brocker")
 
+        channel.queue_declare(QUEUE)
+        print("queue declared")
         channel.exchange_declare(exchange='logs', exchange_type='topic')
         print("exchange declared")
-
-        
         channel.queue_bind(exchange='logs', queue=QUEUE, routing_key="test.*")
         print("queue binded")
 
-
-
-        print("connected to brocker")
     except Exception as e:
         print("Connection to broker failed")
-        print("e",e)
+        print(e)
 
 
 

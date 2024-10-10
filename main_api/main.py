@@ -18,34 +18,6 @@ app = FastAPI()
 logging_startup()
 
 
-@app.get("/test")
-@cache(expire=10, key_builder=request_key_builder, coder=redis_coder)
-def br(request:Request):
-    try:
-        raise Exception
-    except Exception as e:
-        to_brocker(BROKER_URI, "logs", f"error: {e}")
-    return [{"r":"d"}, {"sad":"asds","asdsad":"sadsad"}]
-
-
-
-@app.get("/hello")
-@limiter.limit("120/minute")
-@cache(expire=10, key_builder=request_key_builder, coder=redis_coder)
-async def root(request:Request):
-
-    body = {"Hello":"World"}
-    # try:
-    #     to_brocker(BROKER_URI, 'logs', "bod")
-    # except Exception as e:
-    #     to_brocker(BROKER_URI, "logs", f"error: {e}")
-
-    print(redis.get(make_unique_key(request, body)))
-    
-    response = "Hello, world"
-    return response
-
-
 
 @app.post("/register")
 @limiter.limit(f"120/minute")
