@@ -1,10 +1,18 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 from hashing import sha256
 from jwt_tokens import decode_jwt
 from config import DB_URI
+
+
+
+
+#postgresql:// - correct 
+#postgres:// - not
+
+
 
 Base = declarative_base()
 db = DB_URI
@@ -12,10 +20,9 @@ engine = create_engine(db)
 
 
 
-
-
 Session = sessionmaker(bind=engine)
 session = Session()
+
 
 
 class AbstractClass():
@@ -88,8 +95,6 @@ class Task(Base, AbstractClass):
 
 
 
+if not inspect(engine).has_table("user"):
+    Base.metadata.create_all(engine)
 
-# try:
-#     Base.metadata.create_all(engine)
-# except:
-#     pass

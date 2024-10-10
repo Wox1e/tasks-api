@@ -1,43 +1,54 @@
 from fastapi import FastAPI, Request, Response
 from db import User, session, Task
-from jwt_tokens import *
+from jwt_tokens import decode_jwt, encode_jwt
 from utils import *
-import uvicorn
-import os
-from dotenv import load_dotenv
-from logger import to_brocker
+from config import REQUESTS_PER_MINUTE_LIMIT
+from logger import to_brocker, BROKER_URI, logging_startup
+from caching import *
+
 
 #SlowAPI
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 #
-
 limiter = Limiter(get_remote_address)
-load_dotenv()
+
+
 app = FastAPI()
+logging_startup()
 
 
-
-if __name__=="__main__":
-    uvicorn.run(app)
-
-
-#
-#TODO: Exception handling, Clean the code
-#
-
+@app.get("/test")
+@cache(expire=10, key_builder=request_key_builder, coder=redis_coder)
+def br(request:Request):
+    try:
+        raise Exception
+    except Exception as e:
+        to_brocker(BROKER_URI, "logs", f"error: {e}")
+    return [{"r":"d"}, {"sad":"asds","asdsad":"sadsad"}]
 
 
 
 @app.get("/hello")
-@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
-def root(request:Request):
-    return {"message": "Hello World"}
+@limiter.limit("120/minute")
+@cache(expire=10, key_builder=request_key_builder, coder=redis_coder)
+async def root(request:Request):
+
+    body = {"Hello":"World"}
+    # try:
+    #     to_brocker(BROKER_URI, 'logs', "bod")
+    # except Exception as e:
+    #     to_brocker(BROKER_URI, "logs", f"error: {e}")
+
+    print(redis.get(make_unique_key(request, body)))
+    
+    response = "Hello, world"
+    return response
 
 
 
 @app.post("/register")
-@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
+@limiter.limit(f"120/minute")
 async def register(request: Request):
 
     try:
@@ -51,13 +62,14 @@ async def register(request: Request):
     
     except KeyError as e:
         return {"status":False, "Missed Arguments":e.args}
-    except:
+    except Exception as e:
+        to_brocker(BROKER_URI, "logs", f"error: {e}")
         return {"status":False}
 
     
 
 @app.post("/login")
-@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
+@limiter.limit(f"120/minute")
 async def login(request: Request, response:Response):
 
     try:
@@ -81,20 +93,22 @@ async def login(request: Request, response:Response):
             response.set_cookie(key="token", value=token)
 
         return {"status":True, "auth":True, "token": token}
-    except:
+    except Exception as e:
+        to_brocker(BROKER_URI, "logs", f"error: {e}")
         return {"status":False}
     
 
 
 @app.post("/logout")
 async def logout(request: Request):
-    pass
+    request.cookies.clear()
+    return True
 
 
 
 
 @app.post("/tasks")
-@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
+@limiter.limit(f"120/minute")
 async def post_tasks(request: Request):
     try:
         body = dict(await request.json())
@@ -106,46 +120,58 @@ async def post_tasks(request: Request):
     
     except AuthError as e:
         return {"status":False, "Error":e.msg}
-    except:
+    except Exception as e:
+        to_brocker(BROKER_URI, "logs", f"error: {e}")
         return {"status":False}
     
     
 
 @app.get("/tasks")
-@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
+@limiter.limit(f"120/minute")
+# @cache(expire=15, key_builder=request_key_builder)
 async def get_tasks(request: Request):
     try:
         body = dict(await request.json())
         id = tokenAuth(body, request)
-        tasks = session.query(Task).filter_by(user_id = id).all()
+        
+        # cache = getCache(request, body)
+        # if cache != None: return cache
 
+        tasks = session.query(Task).filter_by(user_id = id).all()
         return tasks
     
     except AuthError as e:
         return {"status":False, "Error":e.msg}
-    except:
+    except Exception as e:
+        to_brocker(BROKER_URI, "logs", f"error: {e}")
         return {"status":False}
     
 
 
 @app.get("/tasks/{task_id}")
-@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
+@limiter.limit(f"120/minute")
+# @cache(expire=15, key_builder=request_key_builder)
 async def user_tasks(task_id:int, request:Request):
     try:
         body = dict(await request.json())
         id = tokenAuth(body, request)
+
+        # cache = getCache(request, body)
+        # if cache != None: return cache
+
         task = session.query(Task).filter_by(user_id = id).filter_by(id = task_id).first()
         return task
     
     except AuthError as e:
         return {"status":False, "Error":e.msg}
-    except:
+    except Exception as e:
+        to_brocker(BROKER_URI, "logs", f"error: {e}")
         return {"status":False}
     
 
 
 @app.put("/tasks/{task_id}")
-@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
+@limiter.limit(f"120/minute")
 async def update_task(task_id:int, request:Request):
     try:
         body = dict(await request.json())
@@ -161,13 +187,14 @@ async def update_task(task_id:int, request:Request):
     
     except AuthError as e:
         return {"status":False, "Error":e.msg}
-    except:
+    except Exception as e:
+        to_brocker(BROKER_URI, "logs", f"error: {e}")
         return {"status":False}
     
 
 
 @app.put("/tasks/{task_id}")
-@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
+@limiter.limit(f"120/minute")
 async def put_task(task_id:int, request:Request):
     try:
         body = dict(await request.json())
@@ -182,12 +209,13 @@ async def put_task(task_id:int, request:Request):
     
     except AuthError as e:
         return {"status":False, "Error":e.msg}
-    except:
+    except Exception as e:
+        to_brocker(BROKER_URI, "logs", f"error: {e}")
         return {"status":False}
     
 
 @app.delete("/tasks/{task_id}")
-@limiter.limit(f"{os.getenv("REQUESTS_PER_MINUTE_LIMIT")}/minute")
+@limiter.limit(f"120/minute")
 async def delete_task(task_id:int, request:Request):
     try:
         body = dict(await request.json())
@@ -200,7 +228,8 @@ async def delete_task(task_id:int, request:Request):
     
     except AuthError as e:
         return {"status":False, "Error":e.msg}
-    except:
+    except Exception as e:
+        to_brocker(BROKER_URI, "logs", f"error: {e}")
         return {"status":False}
     
 
