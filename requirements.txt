@@ -1,0 +1,11 @@
+fastapi
+sqlalchemy
+PyJWT
+slowapi
+python-dotenv
+pika
+uvicorn
+fastapi-cache2
+pickle-mixin
+redis
+psycopg2-binary 
