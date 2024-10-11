@@ -1,4 +1,0 @@
-telebot
-flask
-flask_sqlalchemy
-pika
