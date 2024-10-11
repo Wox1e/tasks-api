@@ -106,6 +106,7 @@ async def get_tasks(request: Request):
         body = dict(await request.json())
         id = tokenAuth(body, request)
         
+
         tasks = session.query(Task).filter_by(user_id = id).all()
         return tasks
     
@@ -119,7 +120,7 @@ async def get_tasks(request: Request):
 
 @app.get("/tasks/{task_id}")
 @limiter.limit(f"120/minute")
-@cache(expire=15, key_builder=request_key_builder)
+# @cache(expire=15, key_builder=request_key_builder)
 async def user_tasks(task_id:int, request:Request):
     try:
         body = dict(await request.json())
