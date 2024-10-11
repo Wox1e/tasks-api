@@ -100,12 +100,13 @@ async def post_tasks(request: Request):
 
 @app.get("/tasks")
 @limiter.limit(f"120/minute")
-# @cache(expire=15, key_builder=request_key_builder)
+@cache(expire=3, key_builder=request_key_builder)
 async def get_tasks(request: Request):
     try:
         body = dict(await request.json())
         id = tokenAuth(body, request)
         
+        if getCache(request, body) != None: return getCache(request, body)
 
         tasks = session.query(Task).filter_by(user_id = id).all()
         return tasks
