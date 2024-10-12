@@ -8,9 +8,9 @@ from config import DB_URI
 
 
 
-
+#for DB_URI
 #postgresql:// - correct 
-#postgres:// - not
+#postgres:// - not correct
 
 
 
@@ -27,6 +27,9 @@ session = Session()
 
 class AbstractClass():
     def addToDB(self):
+        """
+        Adds object instance into DB
+        """
         session.add(self)
         session.commit()
 
@@ -49,6 +52,10 @@ class User(Base, AbstractClass):
 
     @staticmethod
     def check_credentials(username:str, password:str) -> bool:
+        """
+        Returns true if credentials are correct \n
+        Returns false if not
+        """
         user = session.query(User).filter_by(username = username).first()
         
         if not user: return False

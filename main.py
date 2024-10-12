@@ -7,6 +7,8 @@ from logger import to_brocker, BROKER_URI, logging_startup
 from caching import *
 
 
+
+
 #SlowAPI
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -77,11 +79,15 @@ async def login(request: Request, response:Response):
 @app.post("/logout")
 async def logout(request: Request):
     try:
-        body = dict(request.json())
-        token = getToken(request=request, body=body)
-        id = tokenAuth(token)
-        if id == -1: return {"status":True, "auth":False}
-        redis.delete(token)
+        body = dict(await request.json())
+        id = Authorization(body, request)
+
+        if id == -1: 
+            print("User not authenticated")
+            return {"status":True, "auth":False}
+
+        user_token = getUserToken(body, request)        
+        redis.delete(user_token)
     except:
         return {"status":False}
 
@@ -96,8 +102,9 @@ async def logout(request: Request):
 async def post_tasks(request: Request):
     try:
         body = dict(await request.json())
-        token = getToken(request=request, body=body)
-        id = tokenAuth(token)
+
+        id = Authorization(body, request)
+
         description = body["description"]
         task = Task(id, description)
         task.addToDB()
@@ -113,13 +120,13 @@ async def post_tasks(request: Request):
 
 @app.get("/tasks")
 @limiter.limit(f"120/minute")
-@cache(expire=3, key_builder=request_key_builder)
+# @cache(expire=3, key_builder=request_key_builder, coder = redis_coder)
 async def get_tasks(request: Request):
     try:
         body = dict(await request.json())
 
-        token = getToken(request=request, body=body)
-        id = tokenAuth(token)
+        id = Authorization(body, request)
+
 
         if getCache(request, body) != None: return getCache(request, body)
 
@@ -141,8 +148,8 @@ async def user_tasks(task_id:int, request:Request):
     try:
         body = dict(await request.json())
 
-        token = getToken(request=request, body=body)
-        id = tokenAuth(token)
+        id = Authorization(body, request)
+
 
         cache = getCache(request, body)
         if cache != None: 
@@ -166,8 +173,8 @@ async def update_task(task_id:int, request:Request):
     try:
         body = dict(await request.json())
         
-        token = getToken(request=request, body=body)
-        id = tokenAuth(token)
+        id = Authorization(body, request)
+
         
         description = body["description"]
 
@@ -191,8 +198,7 @@ async def put_task(task_id:int, request:Request):
     try:
         body = dict(await request.json())
         
-        token = getToken(request=request, body=body)
-        id = tokenAuth(token)
+        id = Authorization(body, request)
        
         description = body["description"]
         
@@ -214,8 +220,7 @@ async def delete_task(task_id:int, request:Request):
     try:
         body = dict(await request.json())
         
-        token = getToken(request=request, body=body)
-        id = tokenAuth(token)
+        id = Authorization(body, request)
 
         task = session.query(Task).filter_by(user_id = id).filter_by(id = task_id).first()
         session.delete(task)

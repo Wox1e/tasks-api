@@ -17,32 +17,55 @@ def isCookieAllowed(body:dict) -> bool:
 class AuthError(Exception):
     msg:str = "Bad token or missing token"
 
-def tokenAuth(token) -> int:
 
 
-    if not token:
+
+#NOTES ABOUT TOKEN SYSTEM
+#exists two tokens: authorization_key, user_token
+# user_token sends to user
+# both keys stored in key - value redis:
+# user_token -> authorization_key (user_token is the key to authorization_key)
+
+
+
+
+def check_authorization_key(key) -> int:
+
+    if not key:
         raise AuthError
 
-    id = User.check_token(token)
+    id = User.check_token(key)
     if id == -1:
         raise AuthError
     
-
     return id
     
-def getToken(body:dict, request:Request):
+def getUserToken(body:dict, request:Request):
 
     if "token" in body.keys():
         token = body["token"]
     else:
         token = request.cookies.get("token")
+    return token
 
-    if token != None:
-        authToken = redis.get(token)
+
+def get_authorization_key(userToken:str) -> str:
+
+
+    if userToken != None:
+        authToken = redis.get(userToken)
     else:
         return None
     
     return authToken
+
+
+def Authorization(body:dict, request:Request) -> int:
+    user_token = getUserToken(body, request)
+    authorization_key = get_authorization_key(user_token)
+    id = check_authorization_key(authorization_key)
+    return id
+
 
 def generateToken():
     random_string = random.getrandbits(28)

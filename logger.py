@@ -5,6 +5,10 @@ BROKER_URI = "logs-rabbitmq-container"
 QUEUE = 'tg-logging'
 
 def logging_startup():
+    """
+    Initialize logger \n
+    Connects to RabbitMQ and makes queue and exchange for it
+    """
     try:
         connection = pika.BlockingConnection(pika.ConnectionParameters(BROKER_URI))
         channel = connection.channel()
@@ -24,6 +28,9 @@ def logging_startup():
 
 
 def to_brocker(host:str, exchange:str, body:str, routing_key:str = ""):
+    """
+    Send data to RabbitMQ
+    """
     connection = pika.BlockingConnection(pika.ConnectionParameters(host))
     channel = connection.channel()
 

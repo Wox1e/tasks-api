@@ -5,9 +5,8 @@ from fastapi_cache.backends.redis import RedisBackend
 import json
 from hashing import sha256
 import redis
-import pickle
 from config import REDIS_HOST, REDIS_PORT
-
+import jsonpickle
 
 try:
     redis = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=0, decode_responses=True)
@@ -27,6 +26,7 @@ FastAPICache.init(RedisBackend(redis), prefix="main_api-cache")
 
 # Custom cache key function
 async def request_key_builder(func, *args, **kwargs) -> str:
+
     request = kwargs["request"]
     method = request.method
 
@@ -39,6 +39,10 @@ async def request_key_builder(func, *args, **kwargs) -> str:
 
 
 def make_unique_key(request, body:dict):
+    """
+    Builds a unique key of request (based on its parametrs)
+    
+    """
 
     method = request.method
     path = request.url.path
@@ -56,14 +60,26 @@ def make_unique_key(request, body:dict):
 
 
 def getCache(request, body:dict):
+    """
+    Returns data from the cache (based on request parameters)
+    
+    """
     unique_key = make_unique_key(request, body)
     data = redis.get(unique_key)
     return data
 
 class redis_coder:
-    def encode(value):
-        return pickle.dumps(value)
-
-    def decode(value):
-        return pickle.loads(value)
+    """
+    Coder for @cache decocator
     
+    """
+    @classmethod
+    def encode(cls, value):
+        return jsonpickle.encode(value)
+
+    @classmethod
+    def decode(cls, value):
+        return jsonpickle.decode(value)
+    
+
+

@@ -13,6 +13,7 @@ services:
       - rabbitmq
       - redis
       - postgres
+    restart: on-failure
   
   postgres:
     image: postgres
