@@ -9,5 +9,5 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 BROKER_URI = os.getenv("BROKER_URI")
 REDIS_HOST = os.getenv("REDIS_HOST")
 REDIS_PORT = os.getenv("REDIS_PORT")
-
+CACHE_TTL = os.getenv("CACHE_TTL")
 

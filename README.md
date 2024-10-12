@@ -26,6 +26,8 @@ REDIS_HOST = "redis"
 
 REDIS_PORT = 6379
 
+CACHE_TTL = 3
+
 
 
 4. Выполнить команду "docker compose -f "docker-compose.yaml" up -d --build " в папке с проектом 

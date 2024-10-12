@@ -66,6 +66,11 @@ def getCache(request, body:dict):
     """
     unique_key = make_unique_key(request, body)
     data = redis.get(unique_key)
+
+    if data == None: return None
+
+    data = jsonpickle.decode(data)
+
     return data
 
 class redis_coder:
