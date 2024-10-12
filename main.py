@@ -59,7 +59,10 @@ async def login(request: Request, response:Response):
             "username":username,
             "password":password
         }
-        token = encode_jwt(jwt_payload)
+
+        authToken = encode_jwt(jwt_payload)
+        token = generateToken()
+        redis.set(name=token, value=authToken)
 
         if isCookieAllowed(body):
             response.set_cookie(key="token", value=token)
@@ -73,8 +76,17 @@ async def login(request: Request, response:Response):
 
 @app.post("/logout")
 async def logout(request: Request):
+    try:
+        body = dict(request.json())
+        token = getToken(request=request, body=body)
+        id = tokenAuth(token)
+        if id == -1: return {"status":True, "auth":False}
+        redis.delete(token)
+    except:
+        return {"status":False}
+
     request.cookies.clear()
-    return True
+    return {"status":True}
 
 
 
@@ -84,7 +96,8 @@ async def logout(request: Request):
 async def post_tasks(request: Request):
     try:
         body = dict(await request.json())
-        id = tokenAuth(body, request)
+        token = getToken(request=request, body=body)
+        id = tokenAuth(token)
         description = body["description"]
         task = Task(id, description)
         task.addToDB()
@@ -104,8 +117,10 @@ async def post_tasks(request: Request):
 async def get_tasks(request: Request):
     try:
         body = dict(await request.json())
-        id = tokenAuth(body, request)
-        
+
+        token = getToken(request=request, body=body)
+        id = tokenAuth(token)
+
         if getCache(request, body) != None: return getCache(request, body)
 
         tasks = session.query(Task).filter_by(user_id = id).all()
@@ -125,7 +140,9 @@ async def get_tasks(request: Request):
 async def user_tasks(task_id:int, request:Request):
     try:
         body = dict(await request.json())
-        id = tokenAuth(body, request)
+
+        token = getToken(request=request, body=body)
+        id = tokenAuth(token)
 
         cache = getCache(request, body)
         if cache != None: 
@@ -148,7 +165,9 @@ async def user_tasks(task_id:int, request:Request):
 async def update_task(task_id:int, request:Request):
     try:
         body = dict(await request.json())
-        id = tokenAuth(body, request)
+        
+        token = getToken(request=request, body=body)
+        id = tokenAuth(token)
         
         description = body["description"]
 
@@ -171,7 +190,9 @@ async def update_task(task_id:int, request:Request):
 async def put_task(task_id:int, request:Request):
     try:
         body = dict(await request.json())
-        id = tokenAuth(body, request)
+        
+        token = getToken(request=request, body=body)
+        id = tokenAuth(token)
        
         description = body["description"]
         
@@ -192,7 +213,9 @@ async def put_task(task_id:int, request:Request):
 async def delete_task(task_id:int, request:Request):
     try:
         body = dict(await request.json())
-        id = tokenAuth(body, request)
+        
+        token = getToken(request=request, body=body)
+        id = tokenAuth(token)
 
         task = session.query(Task).filter_by(user_id = id).filter_by(id = task_id).first()
         session.delete(task)

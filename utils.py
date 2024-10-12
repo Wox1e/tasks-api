@@ -1,5 +1,8 @@
 from db import User
 from fastapi import Request
+from caching import redis
+import random
+from hashing import sha256
 
 def isCookieAllowed(body:dict) -> bool:
     try:
@@ -14,9 +17,8 @@ def isCookieAllowed(body:dict) -> bool:
 class AuthError(Exception):
     msg:str = "Bad token or missing token"
 
-def tokenAuth(body:dict, request:Request) -> int:
+def tokenAuth(token) -> int:
 
-    token = getToken(body, request)
 
     if not token:
         raise AuthError
@@ -34,5 +36,19 @@ def getToken(body:dict, request:Request):
         token = body["token"]
     else:
         token = request.cookies.get("token")
-        
-    return token
+
+    if token != None:
+        authToken = redis.get(token)
+    else:
+        return None
+    
+    return authToken
+
+def generateToken():
+    random_string = random.getrandbits(28)
+    hash = sha256(str(random_string))
+    while(hash in redis.keys()):
+        random_string = random.getrandbits(28)
+        hash = sha256(str(random_string))
+
+    return hash
